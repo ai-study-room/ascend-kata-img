@@ -2,8 +2,13 @@
 
 set -x
 
-umount /root/rootfs-ubuntu-5-15-63/tmp
-umount /root/rootfs-ubuntu-5-15-63/proc
-umount /root/rootfs-ubuntu-5-15-63/sys
-umount /root/rootfs-ubuntu-5-15-63/dev/pts
-umount /root/rootfs-ubuntu-5-15-63/dev
+if [ -z $ROOTFS ];then
+	echo "[WARNING] ROOTFS is null, will use the default value"
+	ROOTFS=`pwd`/rootfs-ubuntu-5-15-63
+fi
+
+umount $ROOTFS/tmp
+umount $ROOTFS/proc
+umount $ROOTFS/sys
+umount $ROOTFS/dev/pts
+umount $ROOTFS/dev

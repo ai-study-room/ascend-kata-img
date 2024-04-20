@@ -2,8 +2,13 @@
 
 set -x
 
-mount -t sysfs -o ro none /root/rootfs-ubuntu-5-15-63/sys
-mount -t tmpfs  none /root/rootfs-ubuntu-5-15-63/tmp
-mount -t proc -o ro none /root/rootfs-ubuntu-5-15-63/proc
-mount -o bind,ro /dev /root/rootfs-ubuntu-5-15-63/dev
-mount -t devpts none /root/rootfs-ubuntu-5-15-63/dev/pts
+if [ -z $ROOTFS ];then
+	echo "[WARNING] the ROOTFS is null, will use default value"
+	ROOTFS=`pwd`/rootfs-ubuntu-5-15-63
+fi
+
+mount -t sysfs -o ro none $ROOTFS/sys
+mount -t tmpfs  none $ROOTFS/tmp
+mount -t proc -o ro none $ROOTFS/proc
+mount -o bind,ro /dev $ROOTFS/dev
+mount -t devpts none $ROOTFS/dev/pts

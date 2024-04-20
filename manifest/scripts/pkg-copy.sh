@@ -2,10 +2,17 @@
 
 set -x
 
-ROOTFS_DIR=/root/rootfs-ubuntu-5-15-63
-KATA_REPO=/root/gopath/src/github.com/kata-containers/kata-containers
-MANIFEST_DIR=/root
+if [ -z $ROOTFS_DIR ];then
+	ROOTFS_DIR=/root/rootfs-ubuntu-5-15-63
+fi
 
+if [ -z $KATA_REPO ];then
+	KATA_REPO=/root/gopath/src/github.com/kata-containers/kata-containers
+fi
+
+if [ -z $MANIFEST ];then
+	MANIFEST_DIR=/root
+fi
 
 cp $MANIFEST_DIR/Ascend-hdk-910b-npu-driver_23.0.3_linux-aarch64.run $ROOTFS_DIR/root/
 
