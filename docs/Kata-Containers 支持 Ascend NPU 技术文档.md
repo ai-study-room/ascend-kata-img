@@ -130,6 +130,38 @@ CONFIG_MODULE_UNLOAD=y
 
 # CRYPTO_FIPS requires this config when loading modules is enabled.
 CONFIG_MODULE_SIG=y
+
+# Support the DMI and PCI iov
+CONFIG_DMI=y
+CONFIG_PCI_IOV=y
+CONFIG_PCI_PRI=y
+CONFIG_PCI_PASID=y
+
+# Support the KVM   
+CONFIG_KVM=y
+CONFIG_HAVE_KVM_IRQCHIP=y
+CONFIG_HAVE_KVM_IRQFD=y
+CONFIG_HAVE_KVM_IRQ_ROUTING=y
+CONFIG_HAVE_KVM_EVENTFD=y
+CONFIG_KVM_MMIO=y
+CONFIG_HAVE_KVM_MSI=y
+CONFIG_HAVE_KVM_CPU_RELAX_INTERCEPT=y
+CONFIG_KVM_VFIO=y
+CONFIG_HAVE_KVM_ARCH_TLB_FLUSH_ALL=y
+CONFIG_KVM_GENERIC_DIRTYLOG_READ_PROTECT=y
+CONFIG_HAVE_KVM_IRQ_BYPASS=y
+CONFIG_HAVE_KVM_VCPU_RUN_PID_CHANGE=y
+CONFIG_KVM_XFER_TO_GUEST_WORK=y
+
+CONFIG_KVM_VFIO=y
+CONFIG_VFIO=y
+CONFIG_VFIO_IOMMU_TYPE1=y
+CONFIG_VFIO_VIRQFD=y
+CONFIG_VFIO_PCI_CORE=y
+CONFIG_VFIO_PCI_MMAP=y
+CONFIG_VFIO_PCI_INTX=y
+CONFIG_VFIO_PCI=y
+CONFIG_VFIO_MDEV=m
 EOF
 ```
 
@@ -157,10 +189,10 @@ dnf install gcc make openssl pkg-config bison flex bc ca-certificates patch elfu
 dnf install rpm-build rsync
 # 构建 deb 包（因为目标镜像为 ubuntu）
 cd kata-linux-5.15.63-114/
-make rpm-pkg
+make deb-pkg
 # 目标产物
 ls /root/rpmbuild/RPMS/aarch64/
-kernel-5.15.63-2.aarch64.rpm  kernel-devel-5.15.63-2.aarch64.rpm  kernel-headers-5.15.63-2.aarch64.rpm
+kernel-5.15.63-2.aarch64.deb kernel-devel-5.15.63-2.aarch64.deb  kernel-headers-5.15.63-2.aarch64.deb
 ```
 
 ## 编译虚拟机镜像 kata-containers.img
@@ -169,22 +201,22 @@ kernel-5.15.63-2.aarch64.rpm  kernel-devel-5.15.63-2.aarch64.rpm  kernel-headers
 dnf install qemu-img 
 ```
 
-2. 编译文件系统 centos rootfs
+2. 编译文件系统 ubuntu rootfs
 ```sh
 export USE_DOCKER=true
-export EXTRA_PKGS="chrony make curl pciutils yum dnf"
-export ROOTFS_DIR=${GOPATH}/src/github.com/kata-containers/kata-containers/tools/osbuilder/rootfs-builder/centos-rootfs
+export EXTRA_PKGS="chrony make curl pciutils apt dpkg python3 software-properties-common kmod net-tools udev build-essential vim"
+export ROOTFS_DIR=${GOPATH}/src/github.com/kata-containers/kata-containers/tools/osbuilder/rootfs-builder/ubuntu-rootfs
 export AGENT_SOURCE_BIN="${GOPATH}/src/github.com/kata-containers/kata-containers/src/agent/target/aarch64-unknown-linux-musl/release/kata-agent"
 cd ${GOPATH}/src/github.com/kata-containers/kata-containers/tools/osbuilder/rootfs-builder
-./rootfs.sh centos
+./rootfs.sh ubuntu
 ```
 
 3. 编译虚拟机镜像
 ```sh
 cd ..
-cp ../../src/agent/kata-agent.service rootfs-builder/centos-rootfs/etc/systemd/system/
-cp ../../src/agent/kata-containers.target rootfs-builder/centos-rootfs/etc/systemd/system/
-./image-builder/image_builder.sh rootfs-builder/centos-rootfs
+cp ../../src/agent/kata-agent.service rootfs-builder/ubuntu-rootfs/etc/systemd/system/
+cp ../../src/agent/kata-containers.target rootfs-builder/ubuntu-rootfs/etc/systemd/system/
+./image-builder/image_builder.sh rootfs-builder/ubuntu-rootfs
 # 目标产物
 ./kata-containers.img
 ```
@@ -218,9 +250,9 @@ NPU 直通生效，由于虚拟机缺少 Ascend NPU 驱动，暂时功能不可�
 1. 准备文件
 ```sh
 # 拷贝 kernel-devel
-cp /root/rpmbuild/RPMS/aarch64/kernel-devel-5.15.63-2.aarch64.rpm ${GOPATH}/src/github.com/kata-containers/kata-containers/tools/osbuilder/rootfs-builder/centos-rootfs/root/
+cp /root/rpmbuild/RPMS/aarch64/kernel-devel-5.15.63-2.aarch64.rpm ${GOPATH}/src/github.com/kata-containers/kata-containers/tools/osbuilder/rootfs-builder/ubuntu-rootfs/root/
 # 拷贝驱动安装包
-cp /root/kata/Ascend/Ascend-hdk-910b-npu-driver_23.0.rc3_linux-aarch64.run  ${GOPATH}/src/github.com/kata-containers/kata-containers/tools/osbuilder/rootfs-builder/centos-rootfs/root/
+cp /root/kata/Ascend/Ascend-hdk-910b-npu-driver_23.0.rc3_linux-aarch64.run  ${GOPATH}/src/github.com/kata-containers/kata-containers/tools/osbuilder/rootfs-builder/ubuntu-rootfs/root/
 *Ascend HDK 驱动下载地址：https://www.hiascend.com/zh/hardware/firmware-drivers/commercial?product=4&model=11
 ```
 
@@ -228,7 +260,7 @@ cp /root/kata/Ascend/Ascend-hdk-910b-npu-driver_23.0.rc3_linux-aarch64.run  ${GO
 ```sh
 cd ${GOPATH}/src/github.com/kata-containers/kata-containers/tools/osbuilder/rootfs-builder/
 
-export ROOTFS_DIR=centos-rootfs
+export ROOTFS_DIR=ubuntu-rootfs
 mount -t sysfs -o ro none ${ROOTFS_DIR}/sys
 mount -t proc -o ro none ${ROOTFS_DIR}/proc
 mount -o bind,ro /dev ${ROOTFS_DIR}/dev
@@ -239,7 +271,7 @@ chroot ${ROOTFS_DIR}
 
 **注意**：操作完成记得卸载目录
 ```sh
-export ROOTFS_DIR=centos-rootfs
+export ROOTFS_DIR=ubuntu-rootfs
 umount ${ROOTFS_DIR}/sys
 umount ${ROOTFS_DIR}/proc
 umount ${ROOTFS_DIR}/dev/pts
